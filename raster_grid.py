@@ -1,12 +1,26 @@
-# TODO: refactor & clean up this class.
-#  - Familiarize yourself with the code and what it does (it is easiest to read the tests first)
-#  - refactor ...
-#     - give the functions/variables proper names
-#     - make the function bodies more readable
-#     - clean up the test code where beneficial
-#     - make sure to put each individual change in a small, separate commit
-#     - take care that on each commit, all tests pass
+# The `RasterGrid` represents a structured, rectangular grid in 2d space.
+# Each cell of the grid is identified by its column/row index pair:
+#
+#  ________ ________ ________
+# |        |        |        |
+# | (0, 1) | (1, 1) | (2, 2) |
+# |________|________|________|
+# |        |        |        |
+# | (0, 0) | (1, 0) | (2, 0) |
+# |________|________|________|
+#
+#
+# One can construct a `RasterGrid` by specifying the lower left and upper right
+# corners of a domain and the number of cells one wants to use in x- and y-directions.
+# Then, `RasterGrid` allows to iterate over all cells and retrieve the center point
+# of that cell.
+#
+# This class can be significantly cleaned up, though. Give it a try, and if you need
+# help you may look into the file `raster_grid_hints.py`.
+# Make sure to make small changes, verifying that the test still passes, and put
+# each small change into a separate commit.
 from typing import Tuple
+from math import isclose
 from dataclasses import dataclass
 
 
@@ -40,25 +54,6 @@ class RasterGrid:
             self._y0 + (float(cell._iy) + 0.5)*(self._y1 - self._y0)/self._ny
         )
 
-    def get(self, x: float, y: float) -> Cell:
-        eps = 1e-6*max(
-            (self._x1-self._x0)/self._nx,
-            (self._y1-self._y0)/self._ny
-        )
-        if abs(x - self._x1) < eps:
-            ix = self._nx - 1
-        elif abs(x - self._x0) < eps:
-            ix = 0
-        else:
-            ix = int((x - self._x0)/((self._x1 - self._x0)/self._nx))
-        if abs(y - self._y1) < eps:
-            iy = self._ny - 1
-        elif abs(y - self._y0) < eps:
-            iy = 0
-        else:
-            iy = int((y - self._y0)/((self._y1 - self._y0)/self._ny))
-        return self.Cell(ix, iy)
-
 
 def test_number_of_cells():
     x0 = 0.0
@@ -71,40 +66,24 @@ def test_number_of_cells():
     assert RasterGrid(x0, y0, dx, dy, 20, 20).nc == 400
 
 
-def test_locate_cell():
-    grid = RasterGrid(0.0, 0.0, 2.0, 2.0, 2, 2)
-    cell = grid.get(0, 0)
-    assert cell._ix == 0 and cell._iy == 0
-    cell = grid.get(1, 1)
-    assert cell._ix == 1 and cell._iy == 1
-    cell = grid.get(0.5, 0.5)
-    assert cell._ix == 0 and cell._iy == 0
-    cell = grid.get(1.5, 0.5)
-    assert cell._ix == 1 and cell._iy == 0
-    cell = grid.get(0.5, 1.5)
-    assert cell._ix == 0 and cell._iy == 1
-    cell = grid.get(1.5, 1.5)
-    assert cell._ix == 1 and cell._iy == 1
-
-
 def test_cell_center():
     grid = RasterGrid(0.0, 0.0, 2.0, 2.0, 2, 2)
-    cell = grid.get(0.5, 0.5)
-    assert abs(grid.c(cell)[0] - 0.5) < 1e-7 and abs(grid.c(cell)[1] - 0.5) < 1e-7
-    cell = grid.get(1.5, 0.5)
-    assert abs(grid.c(cell)[0] - 1.5) < 1e-7 and abs(grid.c(cell)[1] - 0.5) < 1e-7
-    cell = grid.get(0.5, 1.5)
-    assert abs(grid.c(cell)[0] - 0.5) < 1e-7 and abs(grid.c(cell)[1] - 1.5) < 1e-7
-    cell = grid.get(1.5, 1.5)
-    assert abs(grid.c(cell)[0] - 1.5) < 1e-7 and abs(grid.c(cell)[1] - 1.5) < 1e-7
+    expected_centers = [
+        (0.5, 0.5),
+        (1.5, 0.5),
+        (0.5, 1.5),
+        (1.5, 1.5)
+    ]
+
+    for cell in grid.cells:
+        for center in expected_centers:
+            if isclose(grid.c(cell)[0], center[0]) and isclose(grid.c(cell)[1], center[1]):
+                expected_centers.remove(center)
+
+    assert len(expected_centers) == 0
 
 
-def test_cell_iterator() -> None:
-    grid = RasterGrid(0.0, 0.0, 2.0, 2.0, 2, 2)
-    count = sum(1 for _ in grid.cells)
-    assert count == grid.nc
-
-    cell_indices_without_duplicates = set(list(
-        (cell._ix, cell._iy) for cell in grid.cells
-    ))
-    assert len(cell_indices_without_duplicates) == count
+if __name__ == "__main__":
+    test_number_of_cells()
+    test_cell_center()
+    print("All tests passed")
