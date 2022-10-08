@@ -9,7 +9,6 @@ files with the suffix `_hints.py` contain a number of hints for each exercise.
 - Exercise 1: `payday.py`
 - Exercise 2: `raster_grid.py`
 - Exercise 3: `plot_over_line.py`
-- Exercise 4: `plot_2d.py`
 
 ## Bonus Task
 
