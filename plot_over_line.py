@@ -100,19 +100,25 @@ class DiscreteFunction:
     def __call__(self, position: Point) -> float:
         return self._point_values[self._point_cloud.get_nearest_point_index(position)]
 
-
-def plot_over_line(function: DiscreteFunction,
-                   line: Line,
-                   num_points: int) -> None:
-
+def compute_plot_data(function: DiscreteFunction,
+                       line: Line,
+                          num_points: int) -> List[float]:
     points_on_line = line.get_points_on_line(num_points)
 
     x = []
     y = []
     for i in range(num_points):
         current = points_on_line[i]
-        x.append(line._start.distance_to(current))
+        x.append(line.at(0).distance_to(current))
         y.append(function(current))
+    
+    return x, y
+                       
+
+def plot_over_line(function: DiscreteFunction,
+                   line: Line,
+                   num_points: int) -> None:
+    x, y = compute_plot_data(function, line, num_points)
 
     plot(x, y)
     show()
