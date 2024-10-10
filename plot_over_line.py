@@ -93,6 +93,7 @@ class Line:
 
 class DiscreteFunction:
     def __init__(self, point_cloud: PointCloud, point_values: List[float]) -> None:
+        assert point_cloud.size == len(point_values)
         self._point_cloud = point_cloud
         self._point_values = point_values
 
@@ -103,7 +104,6 @@ class DiscreteFunction:
 def plot_over_line(function: DiscreteFunction,
                    line: Line,
                    num_points: int) -> None:
-    assert point_cloud.size == len(point_values)
 
     points_on_line = line.get_points_on_line(num_points)
 
