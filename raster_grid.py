@@ -19,7 +19,7 @@
 # help you may look into the file `raster_grid_hints.py`.
 # Make sure to make small changes, verifying that the test still passes, and put
 # each small change into a separate commit.
-from typing import Tuple
+from typing import Tuple, Union
 from math import isclose
 from dataclasses import dataclass
 
@@ -27,13 +27,36 @@ class Point:
     def __init__(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
+        
+    def __add__(self, other: Union['Point', float, int]) -> 'Point':
+        if isinstance(other, Point):
+            return Point(self.x + other.x, self.y + other.y)
+        return Point(self.x + other, self.y + other)
+    
+    def __sub__(self, other: Union['Point', float, int]) -> 'Point':
+        if isinstance(other, Point):
+            return Point(self.x - other.x, self.y - other.y)
+        return Point(self.x - other, self.y - other)
+    
+    def __mul__(self, other: Union['Point', float, int]) -> 'Point':
+        if isinstance(other, Point):
+            return Point(self.x * other.x, self.y * other.y)
+        return Point(self.x * other, self.y * other)
+    
+    def __truediv__(self, other: Union['Point', float, int]) -> 'Point':
+        if isinstance(other, Point):
+            return Point(self.x / other.x, self.y / other.y)
+        return Point(self.x / other, self.y / other)
+    
+    def is_close(self, other: 'Point') -> bool:
+        return isclose(self.x, other.x) and isclose(self.y, other.y)
 
 
 class RasterGrid:
     @dataclass
-    class Cell:
-        _ix: int
-        _iy: int
+    class CellIndex(Point):
+        x: int
+        y: int
 
     def __init__(self,
                  lower_left: Point,
@@ -46,14 +69,11 @@ class RasterGrid:
         self._ny = ny
         self.num_cells = nx*ny
         self.cells = [
-            self.Cell(i, j) for i in range(nx) for j in range(ny)
+            self.CellIndex(i, j) for i in range(nx) for j in range(ny)
         ]
 
-    def calculate_cell_center(self, cell: Cell) -> Tuple[float, float]:
-        return (
-            self._lower_left.x + (self._upper_right.x - self._lower_left.x)*(cell._ix + 0.5)/self._nx,
-            self._lower_left.y + (self._upper_right.y - self._lower_left.y)*(cell._iy + 0.5)/self._ny
-        )
+    def calculate_cell_center(self, cell: CellIndex) -> Tuple[float, float]:
+        return self._lower_left + (self._upper_right - self._lower_left)*(cell + 0.5) / Point(self._nx, self._ny)
 
 
 def test_number_of_cells():
@@ -70,15 +90,15 @@ def test_number_of_cells():
 def test_cell_center():
     grid = RasterGrid(Point(0.0, 0.0), Point(2.0, 2.0), 2, 2)
     expected_centers = [
-        (0.5, 0.5),
-        (1.5, 0.5),
-        (0.5, 1.5),
-        (1.5, 1.5)
+        Point(0.5, 0.5),
+        Point(1.5, 0.5),
+        Point(0.5, 1.5),
+        Point(1.5, 1.5)
     ]
 
     for cell in grid.cells:
         for center in expected_centers:
-            if isclose(grid.calculate_cell_center(cell)[0], center[0]) and isclose(grid.calculate_cell_center(cell)[1], center[1]):
+            if grid.calculate_cell_center(cell).is_close(center):
                 expected_centers.remove(center)
 
     assert len(expected_centers) == 0
