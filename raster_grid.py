@@ -23,6 +23,11 @@ from typing import Tuple
 from math import isclose
 from dataclasses import dataclass
 
+class Point:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
 
 class RasterGrid:
     @dataclass
@@ -31,27 +36,23 @@ class RasterGrid:
         _iy: int
 
     def __init__(self,
-                 x0: float,
-                 y0: float,
-                 x1: float,
-                 y1: float,
+                 lower_left: Point,
+                 upper_right: Point,
                  nx: int,
                  ny: int) -> None:
-        self._x0 = x0
-        self._y0 = y0
-        self._x1 = x1
-        self._y1 = y1
+        self._lower_left = lower_left
+        self._upper_right = upper_right
         self._nx = nx
         self._ny = ny
-        self.nc = nx*ny
+        self.num_cells = nx*ny
         self.cells = [
             self.Cell(i, j) for i in range(nx) for j in range(ny)
         ]
 
     def calculate_cell_center(self, cell: Cell) -> Tuple[float, float]:
         return (
-            self._x0 + (float(cell._ix) + 0.5)*(self._x1 - self._x0)/self._nx,
-            self._y0 + (float(cell._iy) + 0.5)*(self._y1 - self._y0)/self._ny
+            self._lower_left.x + (self._upper_right.x - self._lower_left.x)*(cell._ix + 0.5)/self._nx,
+            self._lower_left.y + (self._upper_right.y - self._lower_left.y)*(cell._iy + 0.5)/self._ny
         )
 
 
@@ -60,14 +61,14 @@ def test_number_of_cells():
     y0 = 0.0
     dx = 1.0
     dy = 1.0
-    assert RasterGrid(x0, y0, dx, dy, 10, 10).nc == 100
-    assert RasterGrid(x0, y0, dx, dy, 10, 20).nc == 200
-    assert RasterGrid(x0, y0, dx, dy, 20, 10).nc == 200
-    assert RasterGrid(x0, y0, dx, dy, 20, 20).nc == 400
+    assert RasterGrid(Point(x0, y0), Point(dx, dy), 10, 10).num_cells == 100
+    assert RasterGrid(Point(x0, y0), Point(dx, dy), 10, 20).num_cells == 200
+    assert RasterGrid(Point(x0, y0), Point(dx, dy), 20, 10).num_cells == 200
+    assert RasterGrid(Point(x0, y0), Point(dx, dy), 20, 20).num_cells == 400
 
 
 def test_cell_center():
-    grid = RasterGrid(0.0, 0.0, 2.0, 2.0, 2, 2)
+    grid = RasterGrid(Point(0.0, 0.0), Point(2.0, 2.0), 2, 2)
     expected_centers = [
         (0.5, 0.5),
         (1.5, 0.5),
