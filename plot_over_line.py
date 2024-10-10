@@ -59,24 +59,49 @@ class PointCloud:
         # Note: this is very inefficient, but does it for us...
         return self._points.index(self.get_nearest(p))
 
+class Line:
+    def __init__(self, start: Point, end: Point) -> None:
+        self._start = start
+        self._end = end
+        self._vector = (
+            end.x - start.x,
+            end.y - start.y
+        )
+
+    @property
+    def source(self) -> Point:
+        return self._start
+
+    @property
+    def target(self) -> Point:
+        return self._end
+
+    def at(self, fraction: float) -> Point:
+        assert fraction >= 0.0 and fraction <= 1.0
+        return Point(
+            self._start.x + fraction*self._vector[0],
+            self._start.y + fraction*self._vector[1]
+        )
+
+    def get_points_on_line(self, num_points: int) -> List[Point]:
+        '''let us discretize the line into `num_points` points'''
+        dx = (self._end.x - self._start.x)/(num_points - 1)
+        dy = (self._end.y - self._start.y)/(num_points - 1)
+        return [Point(self._start.x + dx*float(i), self._start.y + dy*float(i)) for i in range(num_points)]
 
 def plot_over_line(point_cloud: PointCloud,
                    point_values: List[float],
-                   p0: Point,
-                   p1: Point,
-                   n: int = 1000) -> None:
+                   line: Line,
+                   num_points: int) -> None:
     assert point_cloud.size == len(point_values)
 
-    # First, let us discretize the line into `n` points
-    dx = (p1.x - p0.x)/(n - 1)
-    dy = (p1.y - p0.y)/(n - 1)
-    points_on_line = [Point(p0.x + dx*float(i), p0.y + dy*float(i)) for i in range(n)]
+    points_on_line = line.get_points_on_line(num_points)
 
     x = []
     y = []
-    for i in range(n):
+    for i in range(num_points):
         current = points_on_line[i]
-        x.append(p0.distance_to(current))
+        x.append(line._start.distance_to(current))
         y.append(point_values[point_cloud.get_nearest_point_index(current)])
 
     plot(x, y)
@@ -109,11 +134,12 @@ if __name__ == "__main__":
     ])
 
     point_values = [_test_function(p) for p in point_cloud]
+    
+    line = Line(Point(0.0, 0.0), Point(1.0, 1.0))
 
     plot_over_line(
         point_cloud,
         point_values,
-        Point(0.0, 0.0),
-        Point(1.0, 1.0),
-        n=2000
+        line,
+        num_points=2000
     )
