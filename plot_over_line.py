@@ -59,6 +59,7 @@ class PointCloud:
         # Note: this is very inefficient, but does it for us...
         return self._points.index(self.get_nearest(p))
 
+
 class Line:
     def __init__(self, start: Point, end: Point) -> None:
         self._start = start
@@ -89,8 +90,17 @@ class Line:
         dy = (self._end.y - self._start.y)/(num_points - 1)
         return [Point(self._start.x + dx*float(i), self._start.y + dy*float(i)) for i in range(num_points)]
 
-def plot_over_line(point_cloud: PointCloud,
-                   point_values: List[float],
+
+class DiscreteFunction:
+    def __init__(self, point_cloud: PointCloud, point_values: List[float]) -> None:
+        self._point_cloud = point_cloud
+        self._point_values = point_values
+
+    def __call__(self, position: Point) -> float:
+        return self._point_values[self._point_cloud.get_nearest_point_index(position)]
+
+
+def plot_over_line(function: DiscreteFunction,
                    line: Line,
                    num_points: int) -> None:
     assert point_cloud.size == len(point_values)
@@ -102,7 +112,7 @@ def plot_over_line(point_cloud: PointCloud,
     for i in range(num_points):
         current = points_on_line[i]
         x.append(line._start.distance_to(current))
-        y.append(point_values[point_cloud.get_nearest_point_index(current)])
+        y.append(function(current))
 
     plot(x, y)
     show()
@@ -135,11 +145,11 @@ if __name__ == "__main__":
 
     point_values = [_test_function(p) for p in point_cloud]
     
+    function = DiscreteFunction(point_cloud, point_values)
     line = Line(Point(0.0, 0.0), Point(1.0, 1.0))
 
     plot_over_line(
-        point_cloud,
-        point_values,
+        function,
         line,
         num_points=2000
     )
